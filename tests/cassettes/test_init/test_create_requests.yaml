@@ -1,0 +1,35 @@
+interactions:
+- request:
+    body: null
+    headers: {}
+    method: GET
+    uri: https://api-metrika.yandex.ru/management/v1/counter/1383371/logrequests/evaluate?date1=2023-01-01&date2=2023-01-01&source=visits&fields=ym:s:pageViews
+  response:
+    body:
+      string: '{"log_request_evaluation":{"possible":true,"expected_size":242388,"max_possible_day_quantity":14206,"log_request_sum_max_size":10737418240,"log_request_sum_size":3443473466}}'
+    headers:
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Wed, 10 May 2023 09:22:09 GMT
+      Expires:
+      - Thu, 01 Jan 1970 00:00:00 GMT
+      Set-Cookie:
+      - JSESSIONID=node0yua75vvx2uddpkr8k8avrj7a14607271.node0; Path=/
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding, User-Agent
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+      X-XSS-Protection:
+      - 1; mode=block
+    status:
+      code: 200
+      message: OK
+    url: https://api-metrika.yandex.ru/management/v1/counter/1383371/logrequests/evaluate?date1=2023-01-01&date2=2023-01-01&source=visits&fields=ym:s:pageViews
+version: 1
