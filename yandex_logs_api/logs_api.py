@@ -73,7 +73,7 @@ class LogsAPI:
                 for row in request_data:
                     yield row
         self.logger.info(
-            "Downloaded report" % (source, date_start, date_end),
+            "Downloaded report",
         )
 
     async def clean_report(self: "LogsAPI") -> None:
