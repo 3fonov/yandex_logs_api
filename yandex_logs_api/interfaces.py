@@ -1,14 +1,13 @@
+import logging
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import AsyncGenerator, Iterator, List, Optional, TypedDict
+from typing import Any, AsyncGenerator, Iterator, List, Optional, TypedDict
 
 import aiohttp
-from pyparsing import Any
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
-import logging
 
 logger = logging.getLogger(__name__)
 
