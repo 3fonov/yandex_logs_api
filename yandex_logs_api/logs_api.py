@@ -78,6 +78,7 @@ class LogsAPI:
 
     async def clean_report(self: "LogsAPI") -> None:
         await CleanRequestEndpoint(self.session, self.api_url, self.request)()
+        self.requests = set()
 
     def create_request(
         self: "LogsAPI",
