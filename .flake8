@@ -426,10 +426,6 @@ select =
     # prefer-simple-any-all
     # Remove unnecessary comprehensions for any and all
 
-    PIE803,
-    # prefer-logging-interpolation
-    # Don't format strings before logging. Let logging interpolate arguments.
-
     PIE804,
     # no-unnecessary-dict-kwargs
     # As long as the keys of the dict are valid Python identifier names, we can safely remove the surrounding dict.

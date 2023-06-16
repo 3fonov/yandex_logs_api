@@ -74,11 +74,13 @@ class LogsAPI:
         self.create_request(date_start, date_end, source, fields)
         await self.create_api_requests()
         async for loaded_request in self.process_requests():
-            async for request_data in DownloadRequestEndpoint(
+            async for request_data, bytes_loaded in DownloadRequestEndpoint(
                 self.session,
                 self.api_url,
                 loaded_request,
             )():
+                self.bytes_loaded += bytes_loaded or 0
+                self.rows_loaded += len(request_data)
                 for row in request_data:
                     yield row
         self.logger.info(
@@ -86,8 +88,14 @@ class LogsAPI:
         )
 
     async def clean_report(self: "LogsAPI") -> None:
-        await CleanRequestEndpoint(self.session, self.api_url, self.request)()
-        await self._session.close()
+        _, bytes_loaded = await CleanRequestEndpoint(
+            self.session,
+            self.api_url,
+            self.request,
+        )()
+        self.bytes_loaded += bytes_loaded or 0
+        if self._session:
+            await self._session.close()
 
         self.requests = set()
         self.bytes_loaded = 0
@@ -115,8 +123,12 @@ class LogsAPI:
     async def get_estimation(self: "LogsAPI") -> LogRequestEvaluation:
         if not self.request:
             raise RuntimeError("request not set")
-        data = await EvaluateEndpoint(self.session, self.api_url, self.request)()
-
+        data, bytes_loaded = await EvaluateEndpoint(
+            self.session,
+            self.api_url,
+            self.request,
+        )()
+        self.bytes_loaded += bytes_loaded or 0
         return LogRequestEvaluation(**data["log_request_evaluation"])
 
     async def create_api_requests(self: "LogsAPI") -> None:
@@ -166,11 +178,19 @@ class LogsAPI:
 
     async def get_request_data(self: "LogsAPI", request: LogRequest) -> dict[str, Any]:
         if request.request_id:
-            data = await LogRequestEndpoint(self.session, self.api_url, request)()
+            data, bytes_loaded = await LogRequestEndpoint(
+                self.session,
+                self.api_url,
+                request,
+            )()
 
         else:
-            data = await LogEndpoint(self.session, self.api_url, request)()
-
+            data, bytes_loaded = await LogEndpoint(
+                self.session,
+                self.api_url,
+                request,
+            )()
+        self.bytes_loaded += bytes_loaded or 0
         if "log_request" not in data:
             raise RuntimeError(f"log_request not found in response {data}")
         return data["log_request"]

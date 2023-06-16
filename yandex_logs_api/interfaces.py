@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import Any, AsyncGenerator, Iterator, List, Optional, TypedDict
+from typing import Any, AsyncGenerator, Iterator, List, Optional, Tuple, TypedDict
 
 import aiohttp
 
@@ -115,13 +115,15 @@ class EvaluateEndpoint:
     api_url: str
     request: LogRequest
 
-    async def __call__(self: "EvaluateEndpoint") -> dict[str, Any]:
+    async def __call__(
+        self: "EvaluateEndpoint",
+    ) -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.get(
             f"{self.api_url}logrequests/evaluate",
             params=self.request.get_api_params(),
         ) as response:
             response.raise_for_status()
-            return await response.json()
+            return await response.json(), response.content_length
 
 
 @dataclass
@@ -130,13 +132,13 @@ class LogEndpoint:
     api_url: str
     request: LogRequest
 
-    async def __call__(self: "LogEndpoint") -> dict[str, Any]:
+    async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
             f"{self.api_url}logrequests",
             params=self.request.get_api_params(),
         ) as response:
             response.raise_for_status()
-            return await response.json()
+            return await response.json(), response.content_length
 
 
 @dataclass
@@ -145,12 +147,14 @@ class LogRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    async def __call__(self: "LogRequestEndpoint") -> dict[str, Any]:
+    async def __call__(
+        self: "LogRequestEndpoint",
+    ) -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.get(
             f"{self.api_url}logrequest/{self.request.request_id}",
         ) as response:
             response.raise_for_status()
-            return await response.json()
+            return await response.json(), response.content_length
 
 
 @dataclass
@@ -159,13 +163,15 @@ class CleanRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    async def __call__(self: "CleanRequestEndpoint") -> dict[str, Any]:
+    async def __call__(
+        self: "CleanRequestEndpoint",
+    ) -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
             response.raise_for_status()
             logger.info("Cleaning request  %s", (self.request.request_id))
-            return await response.json()
+            return await response.json(), response.content_length
 
 
 @dataclass
@@ -176,7 +182,7 @@ class DownloadRequestEndpoint:
 
     async def __call__(
         self: "DownloadRequestEndpoint",
-    ) -> AsyncGenerator[list[dict[str, Any | str]], None]:
+    ) -> Tuple[AsyncGenerator[list[dict[str, Any | str]], None], Optional[int]]:
         base_url = f"{self.api_url}logrequest/{self.request.request_id}/part/"
         if not self.request.parts:
             return
@@ -193,11 +199,12 @@ class DownloadRequestEndpoint:
             async with self.session.get(url) as response:
                 response.raise_for_status()
                 response_text = await response.text()
+                response_size: int = response.content_length
 
             cleaned_text = self.clean_text(response_text)
 
             if len(cleaned_text) < 2:
-                yield []
+                yield [], response_size
 
             headers_data = [clean_field_name(h) for h in cleaned_text[0].split("\t")]
 
@@ -208,7 +215,7 @@ class DownloadRequestEndpoint:
                     if v not in {"[]", "[\\'\\']", "\\'\\'"}
                 }
                 for row in cleaned_text[1:]
-            ]
+            ], response_size
 
     def clean_text(self: "DownloadRequestEndpoint", response_text: str) -> list[str]:
         text_lines = response_text.split("\n")
