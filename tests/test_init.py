@@ -74,5 +74,4 @@ async def test_download(logs_api: LogsAPI) -> None:
         )
     ]
     await logs_api.clean_report()
-    await logs_api.session.close()
     assert len(data) > 0

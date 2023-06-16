@@ -25,16 +25,25 @@ class LogsAPI:
 
     request: LogRequest
     requests: set[LogRequest]
+    _session: aiohttp.ClientSession | None = None
 
     def __init__(self: "LogsAPI", counter_id: int, token: str) -> None:
         self.counter_id = counter_id
         self.token = token
         self.api_url = f"{self.HOST}{counter_id}/"
+        self.bytes_loaded = 0
+        self.rows_loaded = 0
         self.requests = set()
-        headers = {"Authorization": "OAuth " + self.token}
-        self.session = aiohttp.ClientSession(headers=headers)
+
         self.setup_logging()
         self.logger.info("Initialized CID: %s" % self.counter_id)
+
+    @property
+    def session(self: "LogsAPI") -> aiohttp.ClientSession:
+        if not self._session or self._session.closed:
+            headers = {"Authorization": "OAuth " + self.token}
+            self._session = aiohttp.ClientSession(headers=headers)
+        return self._session
 
     def setup_logging(self: "LogsAPI") -> None:
         self.logger = logging.getLogger(__name__)
@@ -78,7 +87,11 @@ class LogsAPI:
 
     async def clean_report(self: "LogsAPI") -> None:
         await CleanRequestEndpoint(self.session, self.api_url, self.request)()
+        await self._session.close()
+
         self.requests = set()
+        self.bytes_loaded = 0
+        self.rows_loaded = 0
 
     def create_request(
         self: "LogsAPI",
