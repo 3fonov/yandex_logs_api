@@ -173,7 +173,7 @@ class LogsAPI:
             if request.status == LogRequestStatus.PROCESSED:
                 return request
             if request.status in (LogRequestStatus.NEW, LogRequestStatus.CREATED):
-                sleep_time = max(120, attempt * attempt)
+                sleep_time = min(120, attempt * attempt)
                 await asyncio.sleep(sleep_time)
                 attempt += 1
                 continue
