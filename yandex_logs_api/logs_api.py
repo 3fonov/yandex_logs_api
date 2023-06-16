@@ -164,6 +164,7 @@ class LogsAPI:
             yield await self.process_request(request)
 
     async def process_request(self: "LogsAPI", request: LogRequest) -> LogRequest:
+        attempt = 1
         while True:
             data = await self.get_request_data(request)
             current_request = LogRequest(**data)
@@ -172,7 +173,9 @@ class LogsAPI:
             if request.status == LogRequestStatus.PROCESSED:
                 return request
             if request.status in (LogRequestStatus.NEW, LogRequestStatus.CREATED):
-                await asyncio.sleep(10)
+                sleep_time = max(120, attempt * attempt)
+                await asyncio.sleep(sleep_time)
+                attempt += 1
                 continue
             raise RuntimeError(f"Wrong status {request.status}")
 
