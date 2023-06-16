@@ -165,13 +165,13 @@ class CleanRequestEndpoint:
 
     async def __call__(
         self: "CleanRequestEndpoint",
-    ) -> Tuple[dict[str, Any], Optional[int]]:
+    ) -> dict[str, Any]:
         async with self.session.post(
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
             response.raise_for_status()
             logger.info("Cleaning request  %s", (self.request.request_id))
-            return await response.json(), response.content_length
+            return await response.json()
 
 
 @dataclass

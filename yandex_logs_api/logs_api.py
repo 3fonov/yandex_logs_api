@@ -88,12 +88,12 @@ class LogsAPI:
         )
 
     async def clean_report(self: "LogsAPI") -> None:
-        _, bytes_loaded = await CleanRequestEndpoint(
-            self.session,
-            self.api_url,
-            self.request,
-        )()
-        self.bytes_loaded += bytes_loaded or 0
+        for request in self.requests:
+            await CleanRequestEndpoint(
+                self.session,
+                self.api_url,
+                request,
+            )()
         if self._session:
             await self._session.close()
 
