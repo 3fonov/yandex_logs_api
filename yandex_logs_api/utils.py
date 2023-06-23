@@ -48,5 +48,7 @@ def fix_value(v: str) -> Any | str:
             return ast.literal_eval(v)
         except ValueError:
             return v
+        except SyntaxError:
+            return v
 
     return v.replace("\\'", "'").replace("'", '"')
