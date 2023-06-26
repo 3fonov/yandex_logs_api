@@ -49,17 +49,18 @@ class LogsAPI:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-        # define handler and formatter
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        )
+        if not self.logger.hasHandlers:
+            # define handler and formatter
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+            )
 
-        # add formatter to handler
-        handler.setFormatter(formatter)
+            # add formatter to handler
+            handler.setFormatter(formatter)
 
-        # add handler to self.logger
-        self.logger.addHandler(handler)
+            # add handler to self.logger
+            self.logger.addHandler(handler)
 
     async def download_report(
         self: "LogsAPI",
