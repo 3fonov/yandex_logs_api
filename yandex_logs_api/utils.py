@@ -36,6 +36,10 @@ def clean_field_name(field_name: str) -> str:
 
 
 def fix_value(v: str) -> Any | str:
+    if v in {"[]", "[\\'\\']"}:
+        return []
+    if v == "\\'\\'":
+        return ""
     if len(v) > 2 and (
         v[0] == "["
         or v[1] == "["

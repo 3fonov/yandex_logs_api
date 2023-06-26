@@ -209,11 +209,7 @@ class DownloadRequestEndpoint:
             headers_data = [clean_field_name(h) for h in cleaned_text[0].split("\t")]
 
             yield [
-                {
-                    headers_data[i]: fix_value(v)
-                    for i, v in enumerate(row.split("\t"))
-                    if v not in {"[]", "[\\'\\']", "\\'\\'"}
-                }
+                {headers_data[i]: fix_value(v) for i, v in enumerate(row.split("\t"))}
                 for row in cleaned_text[1:]
             ], response_size
 
