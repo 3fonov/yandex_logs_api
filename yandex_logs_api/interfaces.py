@@ -158,7 +158,11 @@ class LogRequestEndpoint:
         async with self.session.get(
             f"{self.api_url}logrequest/{self.request.request_id}",
         ) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError as e:
+                logger.error(e)
+                raise e
             return await response.json(), response.content_length
 
 
