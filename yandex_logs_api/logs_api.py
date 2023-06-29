@@ -49,11 +49,11 @@ class LogsAPI:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-        if not self.logger.hasHandlers:
+        if not self.logger.hasHandlers():
             # define handler and formatter
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+                "%(asctime)s %(levelname)s.%(name)s: %(message)s",
             )
 
             # add formatter to handler
@@ -69,7 +69,7 @@ class LogsAPI:
         source: LogRequestSource,
         fields: MetrikaFields,
     ) -> AsyncGenerator[dict[str, Any | str], None]:
-        self.logger.info(
+        self.logger.debug(
             "Downloading  %s report from %s to %s" % (source, date_start, date_end),
         )
         self.create_request(date_start, date_end, source, fields)
@@ -170,8 +170,21 @@ class LogsAPI:
             data = await self.get_request_data(request)
             current_request = LogRequest(**data)
             request.update(current_request)
-            self.logger.info("Request %s: %s" % (request.request_id, request.status))
+            if attempt % 10 == 0:
+                self.logger.info(
+                    "Request %s: %s, attempt %s"
+                    % (request.request_id, request.status, attempt)
+                )
+            else:
+                self.logger.debug(
+                    "Request %s: %s, attempt %s"
+                    % (request.request_id, request.status, attempt)
+                )
+
             if request.status == LogRequestStatus.PROCESSED:
+                self.logger.info(
+                    "Request %s: %s" % (request.request_id, request.status)
+                )
                 return request
             if request.status in (
                 LogRequestStatus.NEW,

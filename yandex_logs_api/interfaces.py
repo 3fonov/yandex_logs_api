@@ -199,7 +199,7 @@ class DownloadRequestEndpoint:
             return
         for part in self.request.parts:
             url = f"{base_url}{part.part_number}/download"
-            logger.info(
+            logger.debug(
                 "Downloading part %s of %s of #%s..."
                 % (
                     part.part_number + 1,
