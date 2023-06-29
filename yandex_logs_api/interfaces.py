@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Iterator, List, Optional, Tuple, TypedDict
 
 import aiohttp
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
@@ -115,6 +116,7 @@ class EvaluateEndpoint:
     api_url: str
     request: LogRequest
 
+    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
     async def __call__(
         self: "EvaluateEndpoint",
     ) -> Tuple[dict[str, Any], Optional[int]]:
@@ -132,6 +134,7 @@ class LogEndpoint:
     api_url: str
     request: LogRequest
 
+    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
     async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
             f"{self.api_url}logrequests",
@@ -147,6 +150,7 @@ class LogRequestEndpoint:
     api_url: str
     request: LogRequest
 
+    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
     async def __call__(
         self: "LogRequestEndpoint",
     ) -> Tuple[dict[str, Any], Optional[int]]:
@@ -163,6 +167,7 @@ class CleanRequestEndpoint:
     api_url: str
     request: LogRequest
 
+    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
     async def __call__(
         self: "CleanRequestEndpoint",
     ) -> dict[str, Any]:
@@ -180,6 +185,7 @@ class DownloadRequestEndpoint:
     api_url: str
     request: LogRequest
 
+    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
     async def __call__(
         self: "DownloadRequestEndpoint",
     ) -> Tuple[AsyncGenerator[list[dict[str, Any | str]], None], Optional[int]]:
@@ -189,7 +195,7 @@ class DownloadRequestEndpoint:
         for part in self.request.parts:
             url = f"{base_url}{part.part_number}/download"
             logger.info(
-                "Downloaded part %s of %s of %s"
+                "Downloading part %s of %s of #%s..."
                 % (
                     part.part_number + 1,
                     len(self.request.parts),
@@ -200,6 +206,14 @@ class DownloadRequestEndpoint:
                 response.raise_for_status()
                 response_text = await response.text()
                 response_size: int = response.content_length
+                logger.info(
+                    "Downloaded part %s of %s of #%s"
+                    % (
+                        part.part_number + 1,
+                        len(self.request.parts),
+                        self.request.request_id,
+                    ),
+                )
 
             cleaned_text = self.clean_text(response_text)
 
