@@ -173,8 +173,12 @@ class LogsAPI:
             self.logger.info("Request %s: %s" % (request.request_id, request.status))
             if request.status == LogRequestStatus.PROCESSED:
                 return request
-            if request.status in (LogRequestStatus.NEW, LogRequestStatus.CREATED):
-                sleep_time = min(120, attempt * attempt)
+            if request.status in (
+                LogRequestStatus.NEW,
+                LogRequestStatus.CREATED,
+                LogRequestStatus.AWAITING_RETRY,
+            ):
+                sleep_time = min(180, attempt * attempt)
                 await asyncio.sleep(sleep_time)
                 attempt += 1
                 continue

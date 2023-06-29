@@ -36,6 +36,7 @@ class LogRequestStatus(str, Enum):
     CANCELED = "canceled"
     PROCESSING_FAILED = "processing_failed"
     CREATED = "created"
+    AWAITING_RETRY = "awaiting_retry"
     CLEANED_BY_USER = "cleaned_by_user"
     CLEANED_AUTOMATICALLY_AS_TOO_OLD = "cleaned_automatically_as_too_old"
 
