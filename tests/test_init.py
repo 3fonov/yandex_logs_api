@@ -114,3 +114,8 @@ async def test_download(logs_api: LogsAPI) -> None:
     ]
     await logs_api.clean_report()
     assert len(data) > 0
+
+
+@pytest.mark.asyncio
+async def test_download(logs_api: LogsAPI) -> None:
+    await logs_api.clean_up()

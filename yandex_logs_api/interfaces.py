@@ -194,12 +194,12 @@ class LogRequestsEndpoint:
     async def __call__(
         self: "LogRequestsEndpoint",
     ) -> list[LogRequest]:
-        async with self.session.post(
+        async with self.session.get(
             f"{self.api_url}logrequests",
         ) as response:
             await check_response(response)
             data = await response.json()
-            return [LogRequest(**r) for r in data]
+            return [LogRequest(**r) for r in data["requests"]]
 
 
 @dataclass
