@@ -187,6 +187,22 @@ class LogRequestEndpoint:
 
 
 @dataclass
+class LogRequestsEndpoint:
+    session: aiohttp.ClientSession
+    api_url: str
+
+    async def __call__(
+        self: "LogRequestsEndpoint",
+    ) -> list[LogRequest]:
+        async with self.session.post(
+            f"{self.api_url}logrequests",
+        ) as response:
+            await check_response(response)
+            data = await response.json()
+            return [LogRequest(**r) for r in data]
+
+
+@dataclass
 class CleanRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str

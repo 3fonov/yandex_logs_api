@@ -17,6 +17,7 @@ from yandex_logs_api.interfaces import (
     LogRequestEvaluation,
     LogRequestSource,
     LogRequestStatus,
+    LogRequestsEndpoint,
 )
 from yandex_logs_api.utils import get_day_intervals
 
@@ -62,6 +63,16 @@ class LogsAPI:
 
             # add handler to self.logger
             self.logger.addHandler(handler)
+
+    async def clean_up(self: "LogsAPI") -> None:
+        requests = await LogRequestsEndpoint(self.session, self.api_url)()
+        for request in requests:
+            if request.status not in (
+                LogRequestStatus.PROCESSED,
+                LogRequestStatus.CREATED,
+            ):
+                continue
+            await CleanRequestEndpoint(self.session, self.api_url, request)()
 
     async def download_report(
         self: "LogsAPI",
