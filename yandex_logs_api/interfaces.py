@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Iterator, List, Optional, Tuple, TypedDict
 
 import aiohttp
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
@@ -117,7 +117,10 @@ class EvaluateEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
     async def __call__(
         self: "EvaluateEndpoint",
     ) -> Tuple[dict[str, Any], Optional[int]]:
@@ -135,7 +138,10 @@ class LogEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
     async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
             f"{self.api_url}logrequests",
@@ -151,7 +157,10 @@ class LogRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
     async def __call__(
         self: "LogRequestEndpoint",
     ) -> Tuple[dict[str, Any], Optional[int]]:
@@ -162,6 +171,7 @@ class LogRequestEndpoint:
                 response.raise_for_status()
             except aiohttp.ClientResponseError as e:
                 logger.error(e)
+
                 raise e
             return await response.json(), response.content_length
 
@@ -172,7 +182,10 @@ class CleanRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
     async def __call__(
         self: "CleanRequestEndpoint",
     ) -> dict[str, Any]:
@@ -190,7 +203,10 @@ class DownloadRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(stop=stop_after_attempt(7), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
     async def __call__(
         self: "DownloadRequestEndpoint",
     ) -> Tuple[AsyncGenerator[list[dict[str, Any | str]], None], Optional[int]]:
@@ -210,7 +226,7 @@ class DownloadRequestEndpoint:
             async with self.session.get(url) as response:
                 response.raise_for_status()
                 response_text = await response.text()
-                response_size: int = response.content_length
+                response_size: int = response.content_length or 0
                 logger.info(
                     "Downloaded part %s of %s of #%s"
                     % (

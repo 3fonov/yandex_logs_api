@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from typing import Any, AsyncGenerator
 
 import aiohttp
+from tenacity import retry, retry_if_result, stop_after_attempt, wait_exponential
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.interfaces import (
@@ -75,6 +76,8 @@ class LogsAPI:
         self.create_request(date_start, date_end, source, fields)
         await self.create_api_requests()
         async for loaded_request in self.process_requests():
+            if not loaded_request:
+                continue
             async for request_data, bytes_loaded in DownloadRequestEndpoint(
                 self.session,
                 self.api_url,
@@ -160,42 +163,32 @@ class LogsAPI:
 
     async def process_requests(
         self: "LogsAPI",
-    ) -> AsyncGenerator[LogRequest, Any]:
+    ) -> AsyncGenerator[LogRequest | None, Any]:
         for request in self.requests:
             yield await self.process_request(request)
 
-    async def process_request(self: "LogsAPI", request: LogRequest) -> LogRequest:
-        attempt = 1
-        while True:
-            data = await self.get_request_data(request)
-            current_request = LogRequest(**data)
-            request.update(current_request)
-            if attempt % 10 == 0:
-                self.logger.info(
-                    "Request %s: %s, attempt %s"
-                    % (request.request_id, request.status, attempt)
-                )
-            else:
-                self.logger.debug(
-                    "Request %s: %s, attempt %s"
-                    % (request.request_id, request.status, attempt)
-                )
+    @retry(
+        retry=retry_if_result(lambda value: value is None),
+        stop=stop_after_attempt(100),
+        wait=wait_exponential(multiplier=1, min=4, max=180),
+    )
+    async def process_request(
+        self: "LogsAPI", request: LogRequest
+    ) -> LogRequest | None:
+        data = await self.get_request_data(request)
+        current_request = LogRequest(**data)
+        request.update(current_request)
 
-            if request.status == LogRequestStatus.PROCESSED:
-                self.logger.info(
-                    "Request %s: %s" % (request.request_id, request.status)
-                )
-                return request
-            if request.status in (
-                LogRequestStatus.NEW,
-                LogRequestStatus.CREATED,
-                LogRequestStatus.AWAITING_RETRY,
-            ):
-                sleep_time = min(180, attempt * attempt)
-                await asyncio.sleep(sleep_time)
-                attempt += 1
-                continue
-            raise RuntimeError(f"Wrong status {request.status}")
+        if request.status == LogRequestStatus.PROCESSED:
+            self.logger.info("Request %s: %s" % (request.request_id, request.status))
+            return request
+        if request.status in (
+            LogRequestStatus.NEW,
+            LogRequestStatus.CREATED,
+            LogRequestStatus.AWAITING_RETRY,
+        ):
+            return None
+        raise RuntimeError(f"Wrong status {request.status}")
 
     async def get_request_data(self: "LogsAPI", request: LogRequest) -> dict[str, Any]:
         if request.request_id:

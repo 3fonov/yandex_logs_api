@@ -11,6 +11,7 @@ ignore=
     PLC0115,
     PLC0116,
     PLR902,
+    PLW201,
     GRG001,
 max-line-length = 90
 exclude = tests/*
