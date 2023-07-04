@@ -19,6 +19,12 @@ from yandex_logs_api.utils import clean_field_name, fix_value
 logger = logging.getLogger(__name__)
 
 
+async def check_response(response: aiohttp.ClientResponse) -> None:
+    if not response.ok:
+        logger.error(await response.text())
+    response.raise_for_status()
+
+
 class LogRequestSource(str, Enum):
     VISITS = "visits"
     HITS = "hits"
@@ -125,7 +131,7 @@ class EvaluateEndpoint:
 
     @retry(
         stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=4, max=180),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
         retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
@@ -135,7 +141,7 @@ class EvaluateEndpoint:
             f"{self.api_url}logrequests/evaluate",
             params=self.request.get_api_params(),
         ) as response:
-            response.raise_for_status()
+            await check_response(response)
             return await response.json(), response.content_length
 
 
@@ -147,7 +153,7 @@ class LogEndpoint:
 
     @retry(
         stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=4, max=180),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
         retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
@@ -155,7 +161,7 @@ class LogEndpoint:
             f"{self.api_url}logrequests",
             params=self.request.get_api_params(),
         ) as response:
-            response.raise_for_status()
+            await check_response(response)
             return await response.json(), response.content_length
 
 
@@ -167,7 +173,7 @@ class LogRequestEndpoint:
 
     @retry(
         stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=4, max=180),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
         retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
@@ -176,12 +182,7 @@ class LogRequestEndpoint:
         async with self.session.get(
             f"{self.api_url}logrequest/{self.request.request_id}",
         ) as response:
-            try:
-                response.raise_for_status()
-            except aiohttp.ClientResponseError as e:
-                logger.error(e)
-
-                raise e
+            await check_response(response)
             return await response.json(), response.content_length
 
 
@@ -193,7 +194,7 @@ class CleanRequestEndpoint:
 
     @retry(
         stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=4, max=180),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
         retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
@@ -202,7 +203,7 @@ class CleanRequestEndpoint:
         async with self.session.post(
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
-            response.raise_for_status()
+            await check_response(response)
             logger.info("Cleaning request  %s", (self.request.request_id))
             return await response.json()
 
@@ -215,7 +216,7 @@ class DownloadRequestEndpoint:
 
     @retry(
         stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=4, max=180),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
         retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
@@ -235,7 +236,7 @@ class DownloadRequestEndpoint:
                 ),
             )
             async with self.session.get(url) as response:
-                response.raise_for_status()
+                await check_response(response)
                 response_text = await response.text()
                 response_size: int = response.content_length or 0
                 logger.info(

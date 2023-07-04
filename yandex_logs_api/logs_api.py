@@ -87,17 +87,16 @@ class LogsAPI:
                 self.rows_loaded += len(request_data)
                 for row in request_data:
                     yield row
+            await CleanRequestEndpoint(
+                self.session,
+                self.api_url,
+                loaded_request,
+            )()
         self.logger.info(
             "Downloaded report",
         )
 
     async def clean_report(self: "LogsAPI") -> None:
-        for request in self.requests:
-            await CleanRequestEndpoint(
-                self.session,
-                self.api_url,
-                request,
-            )()
         if self._session:
             await self._session.close()
 
