@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yandex-logs-api"
-version = "0.1.15"
+version = "0.1.16"
 description = "Yandex Logs Api client"
 authors = ["Vladimir Trifonov <3fonov@gmail.com>"]
 readme = "README.md"

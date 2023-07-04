@@ -57,6 +57,7 @@ async def test_put_requests(logs_api: LogsAPI) -> None:
     requests = [request async for request in logs_api.process_requests()]
 
     assert len(requests) == 1
+    assert requests[0]
     assert requests[0].request_id
     assert requests[0].status == LogRequestStatus.PROCESSED
 

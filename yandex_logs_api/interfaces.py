@@ -5,7 +5,13 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Iterator, List, Optional, Tuple, TypedDict
 
 import aiohttp
-from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+    wait_fixed,
+)
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
@@ -65,7 +71,7 @@ class LogRequest:  # noqa
 
     def __post_init__(self: "LogRequest") -> None:
         if self.parts:
-            self.parts = [LogRequestPart(**part) for part in self.parts]
+            self.parts = [LogRequestPart(**part) for part in self.parts]  # noqa
 
     def __hash__(self: "LogRequest") -> int:
         return hash(self.date1 + self.date2 + self.source + str(self.fields))
@@ -120,6 +126,7 @@ class EvaluateEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=4, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "EvaluateEndpoint",
@@ -141,6 +148,7 @@ class LogEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=4, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
@@ -160,6 +168,7 @@ class LogRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=4, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "LogRequestEndpoint",
@@ -185,6 +194,7 @@ class CleanRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=4, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "CleanRequestEndpoint",
@@ -206,10 +216,11 @@ class DownloadRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=4, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "DownloadRequestEndpoint",
-    ) -> Tuple[AsyncGenerator[list[dict[str, Any | str]], None], Optional[int]]:
+    ):  # noqa
         base_url = f"{self.api_url}logrequest/{self.request.request_id}/part/"
         if not self.request.parts:
             return

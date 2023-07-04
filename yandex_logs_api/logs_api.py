@@ -187,6 +187,7 @@ class LogsAPI:
             LogRequestStatus.CREATED,
             LogRequestStatus.AWAITING_RETRY,
         ):
+            self.logger.info("Request %s: %s" % (request.request_id, request.status))
             return None
         raise RuntimeError(f"Wrong status {request.status}")
 
