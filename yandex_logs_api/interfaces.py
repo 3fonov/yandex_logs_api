@@ -225,6 +225,28 @@ class CleanRequestEndpoint:
 
 
 @dataclass
+class CancelRequestEndpoint:
+    session: aiohttp.ClientSession
+    api_url: str
+    request: LogRequest
+
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
+        retry=retry_if_exception_type(aiohttp.ClientResponseError),
+    )
+    async def __call__(
+        self: "CancelRequestEndpoint",
+    ) -> dict[str, Any]:
+        async with self.session.post(
+            f"{self.api_url}logrequest/{self.request.request_id}/cancel",
+        ) as response:
+            await check_response(response)
+            logger.info("Canceling request  %s", (self.request.request_id))
+            return await response.json()
+
+
+@dataclass
 class DownloadRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str

@@ -8,6 +8,7 @@ from tenacity import retry, retry_if_result, stop_after_attempt, wait_exponentia
 
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.interfaces import (
+    CancelRequestEndpoint,
     CleanRequestEndpoint,
     DownloadRequestEndpoint,
     EvaluateEndpoint,
@@ -15,9 +16,9 @@ from yandex_logs_api.interfaces import (
     LogRequest,
     LogRequestEndpoint,
     LogRequestEvaluation,
+    LogRequestsEndpoint,
     LogRequestSource,
     LogRequestStatus,
-    LogRequestsEndpoint,
 )
 from yandex_logs_api.utils import get_day_intervals
 
@@ -67,12 +68,10 @@ class LogsAPI:
     async def clean_up(self: "LogsAPI") -> None:
         requests = await LogRequestsEndpoint(self.session, self.api_url)()
         for request in requests:
-            if request.status not in (
-                LogRequestStatus.PROCESSED,
-                LogRequestStatus.CREATED,
-            ):
-                continue
-            await CleanRequestEndpoint(self.session, self.api_url, request)()
+            if request.status == LogRequestStatus.PROCESSED:
+                await CleanRequestEndpoint(self.session, self.api_url, request)()
+            if request.status == LogRequestStatus.CREATED:
+                await CancelRequestEndpoint(self.session, self.api_url, request)()
 
     async def download_report(
         self: "LogsAPI",
