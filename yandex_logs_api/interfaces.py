@@ -1,3 +1,4 @@
+import asyncio
 from aiologger import Logger
 from dataclasses import dataclass
 from datetime import date
@@ -285,8 +286,10 @@ class DownloadRequestEndpoint:
                         self.request.request_id,
                     ),
                 )
-
-            cleaned_text = self.clean_text(response_text)
+            loop = asyncio.get_running_loop()
+            cleaned_text = await loop.run_in_executor(
+                None, self.clean_text, response_text
+            )
 
             if len(cleaned_text) < 2:
                 yield [], response_size
