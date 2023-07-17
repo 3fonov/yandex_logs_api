@@ -30,15 +30,19 @@ class LogsAPI:
     requests: set[LogRequest]
     _session: aiohttp.ClientSession | None = None
 
-    def __init__(self: "LogsAPI", counter_id: int, token: str) -> None:
+    def __init__(
+        self: "LogsAPI", counter_id: int, token: str, logger: logging.Logger | None
+    ) -> None:
         self.counter_id = counter_id
         self.token = token
         self.api_url = f"{self.HOST}{counter_id}/"
         self.bytes_loaded = 0
         self.rows_loaded = 0
         self.requests = set()
-
-        self.setup_logging()
+        if logger:
+            self.logger = logger
+        else:
+            self.setup_logging()
         self.logger.info("Initialized CID: %s" % self.counter_id)
 
     @property
