@@ -220,7 +220,7 @@ class CleanRequestEndpoint:
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
             await check_response(response)
-            await logger.info("Cleaning request  %s", (self.request.request_id))
+            await logger.info("Cleaning request  %s" % (self.request.request_id))
             return await response.json()
 
 
@@ -242,7 +242,7 @@ class CancelRequestEndpoint:
             f"{self.api_url}logrequest/{self.request.request_id}/cancel",
         ) as response:
             await check_response(response)
-            await logger.info("Canceling request  %s", (self.request.request_id))
+            await logger.info("Canceling request  %s" % (self.request.request_id))
             return await response.json()
 
 
