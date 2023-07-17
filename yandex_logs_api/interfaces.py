@@ -1,4 +1,4 @@
-import logging
+from aiologger import Logger
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
@@ -16,12 +16,12 @@ from tenacity import (
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
 
-logger = logging.getLogger(__name__)
+logger = Logger.with_default_handlers()
 
 
 async def check_response(response: aiohttp.ClientResponse) -> None:
     if not response.ok:
-        logger.error(await response.text())
+        await logger.error(await response.text())
     response.raise_for_status()
 
 
@@ -220,7 +220,7 @@ class CleanRequestEndpoint:
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
             await check_response(response)
-            logger.info("Cleaning request  %s", (self.request.request_id))
+            await logger.info("Cleaning request  %s", (self.request.request_id))
             return await response.json()
 
 
@@ -242,7 +242,7 @@ class CancelRequestEndpoint:
             f"{self.api_url}logrequest/{self.request.request_id}/cancel",
         ) as response:
             await check_response(response)
-            logger.info("Canceling request  %s", (self.request.request_id))
+            await logger.info("Canceling request  %s", (self.request.request_id))
             return await response.json()
 
 
@@ -265,7 +265,7 @@ class DownloadRequestEndpoint:
             return
         for part in self.request.parts:
             url = f"{base_url}{part.part_number}/download"
-            logger.debug(
+            await logger.debug(
                 "Downloading part %s of %s of #%s..."
                 % (
                     part.part_number + 1,
@@ -277,7 +277,7 @@ class DownloadRequestEndpoint:
                 await check_response(response)
                 response_text = await response.text()
                 response_size: int = response.content_length or 0
-                logger.info(
+                await logger.info(
                     "Downloaded part %s of %s of #%s"
                     % (
                         part.part_number + 1,
