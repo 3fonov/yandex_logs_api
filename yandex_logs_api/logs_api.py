@@ -99,8 +99,7 @@ class LogsAPI:
             )():
                 self.bytes_loaded += bytes_loaded or 0
                 self.rows_loaded += len(request_data)
-                for row in request_data:
-                    yield row
+                yield request_data
             await CleanRequestEndpoint(
                 self.session,
                 self.api_url,

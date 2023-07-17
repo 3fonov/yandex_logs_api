@@ -66,8 +66,8 @@ async def test_put_requests(logs_api: LogsAPI) -> None:
 @pytest.mark.asyncio
 async def test_download(logs_api: LogsAPI) -> None:
     data = [
-        row
-        async for row in logs_api.download_report(
+        rows
+        async for rows in logs_api.download_report(
             date(2023, 3, 1),
             date(2023, 3, 10),
             LogRequestSource.HITS,
