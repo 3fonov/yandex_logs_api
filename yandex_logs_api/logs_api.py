@@ -53,19 +53,6 @@ class LogsAPI:
     def setup_logging(self: "LogsAPI") -> None:
         self.logger = Logger.with_default_handlers()
 
-        if not self.logger.hasHandlers():
-            # define handler and formatter
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                "%(asctime)s %(levelname)s.%(name)s: %(message)s",
-            )
-
-            # add formatter to handler
-            handler.setFormatter(formatter)
-
-            # add handler to self.logger
-            self.logger.addHandler(handler)
-
     async def clean_up(self: "LogsAPI") -> None:
         requests = await LogRequestsEndpoint(self.session, self.api_url)()
         for request in requests:
@@ -81,7 +68,7 @@ class LogsAPI:
         source: LogRequestSource,
         fields: MetrikaFields,
     ) -> AsyncGenerator[dict[str, Any | str], None]:
-        self.logger.debug(
+        await self.logger.debug(
             "Downloading  %s report from %s to %s" % (source, date_start, date_end),
         )
         self.create_request(date_start, date_end, source, fields)
@@ -102,7 +89,7 @@ class LogsAPI:
                 self.api_url,
                 loaded_request,
             )()
-        self.logger.info(
+        await self.logger.info(
             "Downloaded report",
         )
 
@@ -152,10 +139,10 @@ class LogsAPI:
             )
 
         if estimation.possible:
-            self.logger.info("Estimated as possible")
+            await self.logger.info("Estimated as possible")
             self.requests.add(self.request)
             return
-        self.logger.info("Estimated as possible but need to be chunked")
+        await self.logger.info("Estimated as possible but need to be chunked")
         for date_start, date_end in get_day_intervals(
             date_start=self.request.date_start,
             date_end=self.request.date_end,
@@ -167,7 +154,9 @@ class LogsAPI:
                 source=self.request.source,
                 fields=self.request.fields,
             )
-            self.logger.info("Creating request from %s to %s" % (date_start, date_end))
+            await self.logger.info(
+                "Creating request from %s to %s" % (date_start, date_end)
+            )
             self.requests.add(request)
 
     async def process_requests(
@@ -189,14 +178,18 @@ class LogsAPI:
         request.update(current_request)
 
         if request.status == LogRequestStatus.PROCESSED:
-            self.logger.info("Request %s: %s" % (request.request_id, request.status))
+            await self.logger.info(
+                "Request %s: %s" % (request.request_id, request.status)
+            )
             return request
         if request.status in (
             LogRequestStatus.NEW,
             LogRequestStatus.CREATED,
             LogRequestStatus.AWAITING_RETRY,
         ):
-            self.logger.info("Request %s: %s" % (request.request_id, request.status))
+            await self.logger.info(
+                "Request %s: %s" % (request.request_id, request.status)
+            )
             return None
         raise RuntimeError(f"Wrong status {request.status}")
 
