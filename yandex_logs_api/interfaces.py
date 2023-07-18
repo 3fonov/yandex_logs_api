@@ -1,5 +1,5 @@
 import asyncio
-from logging import Logger
+import logging
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
@@ -17,7 +17,7 @@ from tenacity import (
 from yandex_logs_api.fields import MetrikaFields
 from yandex_logs_api.utils import clean_field_name, fix_value
 
-logger = Logger.with_default_handlers()
+logger = logging.getLogger("Logs API")
 
 
 async def check_response(response: aiohttp.ClientResponse) -> None:
