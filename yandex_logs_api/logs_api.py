@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import Any, AsyncGenerator
-from aiologger import Logger
+from logging import Logger
+import logging
 import aiohttp
 from tenacity import retry, retry_if_result, stop_after_attempt, wait_exponential
 
@@ -51,7 +52,7 @@ class LogsAPI:
         return self._session
 
     def setup_logging(self: "LogsAPI") -> None:
-        self.logger = Logger.with_default_handlers()
+        self.logger = logging.getLogger("Logs API")
 
     async def clean_up(self: "LogsAPI") -> None:
         requests = await LogRequestsEndpoint(self.session, self.api_url)()

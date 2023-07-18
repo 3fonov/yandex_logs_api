@@ -110,20 +110,6 @@ yarl = ">=1.0,<2.0"
 speedups = ["Brotli", "aiodns", "cchardet"]
 
 [[package]]
-name = "aiologger"
-version = "0.7.0"
-description = "Asynchronous logging for python and asyncio"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "aiologger-0.7.0.tar.gz", hash = "sha256:7a4d5c91b836b61e842a791071786a3d80d6b6fa46fb8fd8e73391253ecb72ac"},
-]
-
-[package.extras]
-aiofiles = ["aiofiles (==0.4.0)"]
-
-[[package]]
 name = "aiosignal"
 version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
@@ -1672,4 +1658,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "a9ef1eababf1a72473b7732572fba455518666d452f39e92f287a056b45006c3"
+content-hash = "e4b343d4ad3f5020cff7acfd597dba06c41c71bec81cc83b9c11db3a2807347e"
