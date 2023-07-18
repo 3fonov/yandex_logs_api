@@ -69,7 +69,7 @@ class LogsAPI:
         source: LogRequestSource,
         fields: MetrikaFields,
     ) -> AsyncGenerator[dict[str, Any | str], None]:
-        await self.logger.debug(
+        self.logger.debug(
             "Downloading  %s report from %s to %s" % (source, date_start, date_end),
         )
         self.create_request(date_start, date_end, source, fields)
@@ -90,7 +90,7 @@ class LogsAPI:
                 self.api_url,
                 loaded_request,
             )()
-        await self.logger.info(
+        self.logger.info(
             "Downloaded report",
         )
 
@@ -140,10 +140,10 @@ class LogsAPI:
             )
 
         if estimation.possible:
-            await self.logger.info("Estimated as possible")
+            self.logger.info("Estimated as possible")
             self.requests.add(self.request)
             return
-        await self.logger.info("Estimated as possible but need to be chunked")
+        self.logger.info("Estimated as possible but need to be chunked")
         for date_start, date_end in get_day_intervals(
             date_start=self.request.date_start,
             date_end=self.request.date_end,
@@ -155,9 +155,7 @@ class LogsAPI:
                 source=self.request.source,
                 fields=self.request.fields,
             )
-            await self.logger.info(
-                "Creating request from %s to %s" % (date_start, date_end)
-            )
+            self.logger.info("Creating request from %s to %s" % (date_start, date_end))
             self.requests.add(request)
 
     async def process_requests(
@@ -179,18 +177,14 @@ class LogsAPI:
         request.update(current_request)
 
         if request.status == LogRequestStatus.PROCESSED:
-            await self.logger.info(
-                "Request %s: %s" % (request.request_id, request.status)
-            )
+            self.logger.info("Request %s: %s" % (request.request_id, request.status))
             return request
         if request.status in (
             LogRequestStatus.NEW,
             LogRequestStatus.CREATED,
             LogRequestStatus.AWAITING_RETRY,
         ):
-            await self.logger.info(
-                "Request %s: %s" % (request.request_id, request.status)
-            )
+            self.logger.info("Request %s: %s" % (request.request_id, request.status))
             return None
         raise RuntimeError(f"Wrong status {request.status}")
 
