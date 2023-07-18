@@ -48,7 +48,7 @@ class LogsAPI:
     def session(self: "LogsAPI") -> aiohttp.ClientSession:
         if not self._session or self._session.closed:
             headers = {"Authorization": "OAuth " + self.token}
-            self._session = aiohttp.ClientSession(headers=headers)
+            self._session = aiohttp.ClientSession(headers=headers, conn_timeout=30)
         return self._session
 
     def setup_logging(self: "LogsAPI") -> None:
