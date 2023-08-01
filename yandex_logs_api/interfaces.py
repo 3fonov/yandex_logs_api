@@ -253,11 +253,6 @@ class DownloadRequestEndpoint:
     api_url: str
     request: LogRequest
 
-    @retry(
-        stop=stop_after_attempt(7),
-        wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
-    )
     async def __call__(
         self: "DownloadRequestEndpoint",
     ):  # noqa
@@ -266,26 +261,8 @@ class DownloadRequestEndpoint:
             return
         for part in self.request.parts:
             url = f"{base_url}{part.part_number}/download"
-            logger.debug(
-                "Downloading part %s of %s of #%s..."
-                % (
-                    part.part_number + 1,
-                    len(self.request.parts),
-                    self.request.request_id,
-                ),
-            )
-            async with self.session.get(url) as response:
-                await check_response(response)
-                response_text = await response.text()
-                response_size: int = response.content_length or 0
-                logger.info(
-                    "Downloaded part %s of %s of #%s"
-                    % (
-                        part.part_number + 1,
-                        len(self.request.parts),
-                        self.request.request_id,
-                    ),
-                )
+
+            response_text, response_size = await self.download_part(part, url)
             loop = asyncio.get_running_loop()
             cleaned_text = await loop.run_in_executor(
                 None, self.clean_text, response_text
@@ -300,6 +277,34 @@ class DownloadRequestEndpoint:
                 {headers_data[i]: fix_value(v) for i, v in enumerate(row.split("\t"))}
                 for row in cleaned_text[1:]
             ], response_size
+
+    @retry(
+        stop=stop_after_attempt(7),
+        wait=wait_exponential(multiplier=1, min=16, max=180),
+    )
+    async def download_part(self, part, url):
+        logger.debug(
+            "Downloading part %s of %s of #%s..."
+            % (
+                part.part_number + 1,
+                len(self.request.parts),
+                self.request.request_id,
+            ),
+        )
+        async with self.session.get(url) as response:
+            await check_response(response)
+            response_text = await response.text()
+            response_size: int = response.content_length or 0
+            logger.info(
+                "Downloaded part %s of %s of #%s"
+                % (
+                    part.part_number + 1,
+                    len(self.request.parts),
+                    self.request.request_id,
+                ),
+            )
+
+        return response_text, response_size
 
     def clean_text(self: "DownloadRequestEndpoint", response_text: str) -> list[str]:
         text_lines = response_text.split("\n")
