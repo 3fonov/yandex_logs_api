@@ -92,6 +92,7 @@ class LogsAPI:
         self.logger.info(
             "Downloaded report",
         )
+        yield []
 
     async def clean_report(self: "LogsAPI") -> None:
         if self._session:
