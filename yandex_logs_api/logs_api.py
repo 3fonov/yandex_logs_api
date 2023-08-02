@@ -58,10 +58,13 @@ class LogsAPI:
     async def clean_up(self: "LogsAPI") -> None:
         requests = await LogRequestsEndpoint(self.session, self.api_url)()
         for request in requests:
-            if request.status == LogRequestStatus.PROCESSED:
-                await CleanRequestEndpoint(self.session, self.api_url, request)()
-            if request.status == LogRequestStatus.CREATED:
-                await CancelRequestEndpoint(self.session, self.api_url, request)()
+            await self.clean_request(request)
+
+    async def clean_request(self, request):
+        if request.status == LogRequestStatus.PROCESSED:
+            await CleanRequestEndpoint(self.session, self.api_url, request)()
+        if request.status == LogRequestStatus.CREATED:
+            await CancelRequestEndpoint(self.session, self.api_url, request)()
 
     async def download_report(
         self: "LogsAPI",
@@ -84,11 +87,8 @@ class LogsAPI:
                 self.bytes_loaded += bytes_loaded or 0
                 self.rows_loaded += len(request_data)
                 yield request_data
-            await CleanRequestEndpoint(
-                self.session,
-                self.api_url,
-                loaded_request,
-            )()
+            self.clean_request(loaded_request)
+
         self.logger.info(
             "Downloaded report",
         )
