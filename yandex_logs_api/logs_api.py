@@ -60,7 +60,8 @@ class LogsAPI:
         for request in requests:
             await self.clean_request(request)
 
-    async def clean_request(self, request):
+    async def clean_request(self, request: LogRequest):
+        self.logger.info("Cleaning request %s", request.request_id)
         if request.status == LogRequestStatus.PROCESSED:
             await CleanRequestEndpoint(self.session, self.api_url, request)()
         if request.status == LogRequestStatus.CREATED:
@@ -87,7 +88,7 @@ class LogsAPI:
                 self.bytes_loaded += bytes_loaded or 0
                 self.rows_loaded += len(request_data)
                 yield request_data
-            self.clean_request(loaded_request)
+            await self.clean_request(loaded_request)
 
         self.logger.info(
             "Downloaded report",
