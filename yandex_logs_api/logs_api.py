@@ -75,7 +75,6 @@ class LogsAPI:
         )
         self.create_request(date_start, date_end, source, fields)
         await self.create_api_requests()
-        sem = asyncio.Semaphore(3)
         async for loaded_request in self.process_requests():
             if not loaded_request:
                 continue
@@ -84,8 +83,7 @@ class LogsAPI:
             )():
                 self.bytes_loaded += bytes_loaded or 0
                 self.rows_loaded += len(request_data)
-                async with sem:
-                    yield request_data
+                yield request_data
             await CleanRequestEndpoint(
                 self.session,
                 self.api_url,
