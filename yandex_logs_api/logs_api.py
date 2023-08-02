@@ -174,16 +174,15 @@ class LogsAPI:
         data = await self.get_request_data(request)
         current_request = LogRequest(**data)
         request.update(current_request)
+        self.logger.info("Request %s: %s" % (request.request_id, request.status))
 
         if request.status == LogRequestStatus.PROCESSED:
-            self.logger.info("Request %s: %s" % (request.request_id, request.status))
             return request
         if request.status in (
             LogRequestStatus.NEW,
             LogRequestStatus.CREATED,
             LogRequestStatus.AWAITING_RETRY,
         ):
-            self.logger.info("Request %s: %s" % (request.request_id, request.status))
             return None
         raise RuntimeError(f"Wrong status {request.status}")
 
