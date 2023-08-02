@@ -95,9 +95,6 @@ class LogsAPI:
         yield []
 
     async def clean_report(self: "LogsAPI") -> None:
-        if self._session:
-            await self._session.close()
-
         self.requests = set()
         self.bytes_loaded = 0
         self.rows_loaded = 0
