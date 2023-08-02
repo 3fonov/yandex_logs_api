@@ -248,6 +248,7 @@ class DownloadRequestEndpoint:
     api_url: str
     request: LogRequest
     logger: logging.Logger
+    sem: asyncio.Semaphore = asyncio.Semaphore(5)
 
     async def __call__(
         self: "DownloadRequestEndpoint",
@@ -255,21 +256,27 @@ class DownloadRequestEndpoint:
         if not self.request.parts:
             return
         for part in self.request.parts:
-            response_text, response_size = await self.download_part(part)
-            loop = asyncio.get_running_loop()
-            cleaned_text = await loop.run_in_executor(
-                None, self.clean_text, response_text
-            )
+            async with self.sem:
+                response_text, response_size = await self.download_part(part)
+                loop = asyncio.get_running_loop()
+                cleaned_text = await loop.run_in_executor(
+                    None, self.clean_text, response_text
+                )
 
-            if len(cleaned_text) < 2:
-                yield [], response_size
+                if len(cleaned_text) < 2:
+                    yield [], response_size
 
-            headers_data = [clean_field_name(h) for h in cleaned_text[0].split("\t")]
+                headers_data = [
+                    clean_field_name(h) for h in cleaned_text[0].split("\t")
+                ]
 
-            yield [
-                {headers_data[i]: fix_value(v) for i, v in enumerate(row.split("\t"))}
-                for row in cleaned_text[1:]
-            ], response_size
+                yield [
+                    {
+                        headers_data[i]: fix_value(v)
+                        for i, v in enumerate(row.split("\t"))
+                    }
+                    for row in cleaned_text[1:]
+                ], response_size
 
     @retry(
         stop=stop_after_attempt(7),
