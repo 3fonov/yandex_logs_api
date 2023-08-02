@@ -133,7 +133,6 @@ class EvaluateEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "EvaluateEndpoint",
@@ -155,7 +154,6 @@ class LogEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(self: "LogEndpoint") -> Tuple[dict[str, Any], Optional[int]]:
         async with self.session.post(
@@ -175,7 +173,6 @@ class LogRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "LogRequestEndpoint",
@@ -212,7 +209,6 @@ class CleanRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "CleanRequestEndpoint",
@@ -234,7 +230,6 @@ class CancelRequestEndpoint:
     @retry(
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
-        retry=retry_if_exception_type(aiohttp.ClientResponseError),
     )
     async def __call__(
         self: "CancelRequestEndpoint",
