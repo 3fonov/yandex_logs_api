@@ -78,9 +78,7 @@ class LogsAPI:
             if not loaded_request:
                 continue
             async for request_data, bytes_loaded in DownloadRequestEndpoint(
-                self.session,
-                self.api_url,
-                loaded_request,
+                self.session, self.api_url, loaded_request, self.logger
             )():
                 self.bytes_loaded += bytes_loaded or 0
                 self.rows_loaded += len(request_data)

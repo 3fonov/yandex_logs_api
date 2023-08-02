@@ -247,17 +247,15 @@ class DownloadRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str
     request: LogRequest
+    logger: logging.Logger
 
     async def __call__(
         self: "DownloadRequestEndpoint",
     ):  # noqa
-        base_url = f"{self.api_url}logrequest/{self.request.request_id}/part/"
         if not self.request.parts:
             return
         for part in self.request.parts:
-            url = f"{base_url}{part.part_number}/download"
-
-            response_text, response_size = await self.download_part(part, url)
+            response_text, response_size = await self.download_part(part)
             loop = asyncio.get_running_loop()
             cleaned_text = await loop.run_in_executor(
                 None, self.clean_text, response_text
@@ -277,27 +275,30 @@ class DownloadRequestEndpoint:
         stop=stop_after_attempt(7),
         wait=wait_exponential(multiplier=1, min=16, max=180),
     )
-    async def download_part(self, part, url):
-        logger.debug(
-            "Downloading part %s of %s of #%s..."
+    async def download_part(self, part):
+        base_url = f"{self.api_url}logrequest/{self.request.request_id}/part/"
+        url = f"{base_url}{part.part_number}/download"
+        self.logger.debug(
+            "Downloading part %s of %s of #%s...\n%s"
+            % (
+                part.part_number + 1,
+                len(self.request.parts),
+                self.request.request_id,
+                url,
+            ),
+        )
+        async with self.session.get(url) as response:
+            await check_response(response)
+            response_text = await response.text()
+        response_size: int = response.content_length or 0
+        self.logger.info(
+            "Downloaded part %s of %s of #%s"
             % (
                 part.part_number + 1,
                 len(self.request.parts),
                 self.request.request_id,
             ),
         )
-        async with self.session.get(url) as response:
-            await check_response(response)
-            response_text = await response.text()
-            response_size: int = response.content_length or 0
-            logger.info(
-                "Downloaded part %s of %s of #%s"
-                % (
-                    part.part_number + 1,
-                    len(self.request.parts),
-                    self.request.request_id,
-                ),
-            )
 
         return response_text, response_size
 
