@@ -56,16 +56,20 @@ class LogsAPI:
         self.logger = logging.getLogger("Logs API")
 
     async def clean_up(self: "LogsAPI") -> None:
-        requests = await LogRequestsEndpoint(self.session, self.api_url)()
+        requests = await LogRequestsEndpoint(self.session, self.api_url, self.logger)()
         for request in requests:
             await self.clean_request(request)
 
     async def clean_request(self, request: LogRequest):
         self.logger.info("Cleaning request %s", request.request_id)
         if request.status == LogRequestStatus.PROCESSED:
-            await CleanRequestEndpoint(self.session, self.api_url, request)()
+            await CleanRequestEndpoint(
+                self.session, self.api_url, request, self.logger
+            )()
         if request.status == LogRequestStatus.CREATED:
-            await CancelRequestEndpoint(self.session, self.api_url, request)()
+            await CancelRequestEndpoint(
+                self.session, self.api_url, request, self.logger
+            )()
 
     async def download_report(
         self: "LogsAPI",
@@ -73,7 +77,7 @@ class LogsAPI:
         date_end: date,
         source: LogRequestSource,
         fields: MetrikaFields,
-    ) -> AsyncGenerator[dict[str, Any | str], None]:
+    ) -> AsyncGenerator[dict[str, Any | str] | None, None]:
         self.logger.debug(
             "Downloading  %s report from %s to %s" % (source, date_start, date_end),
         )
@@ -188,16 +192,12 @@ class LogsAPI:
     async def get_request_data(self: "LogsAPI", request: LogRequest) -> dict[str, Any]:
         if request.request_id:
             data, bytes_loaded = await LogRequestEndpoint(
-                self.session,
-                self.api_url,
-                request,
+                self.session, self.api_url, request, self.logger
             )()
 
         else:
             data, bytes_loaded = await LogEndpoint(
-                self.session,
-                self.api_url,
-                request,
+                self.session, self.api_url, request, self.logger
             )()
         self.bytes_loaded += bytes_loaded or 0
         if "log_request" not in data:

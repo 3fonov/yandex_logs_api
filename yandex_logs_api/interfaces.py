@@ -20,9 +20,15 @@ from yandex_logs_api.utils import clean_field_name, fix_value
 logger = logging.getLogger("Logs API")
 
 
-async def check_response(response: aiohttp.ClientResponse) -> None:
+async def check_response(
+    response: aiohttp.ClientResponse, custom_logger: logging.Logger | None = None
+) -> None:
     if not response.ok:
-        logger.error(await response.text())
+        error_text = await response.text()
+        if custom_logger:
+            custom_logger.error(error_text)
+        else:
+            logger.error(error_text)
     response.raise_for_status()
 
 
@@ -150,6 +156,7 @@ class LogEndpoint:
     session: aiohttp.ClientSession
     api_url: str
     request: LogRequest
+    logger: logging.Logger
 
     @retry(
         stop=stop_after_attempt(7),
@@ -160,7 +167,7 @@ class LogEndpoint:
             f"{self.api_url}logrequests",
             params=self.request.get_api_params(),
         ) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             return await response.json(), response.content_length
 
 
@@ -169,6 +176,7 @@ class LogRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str
     request: LogRequest
+    logger: logging.Logger
 
     @retry(
         stop=stop_after_attempt(7),
@@ -180,7 +188,7 @@ class LogRequestEndpoint:
         async with self.session.get(
             f"{self.api_url}logrequest/{self.request.request_id}",
         ) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             return await response.json(), response.content_length
 
 
@@ -188,6 +196,7 @@ class LogRequestEndpoint:
 class LogRequestsEndpoint:
     session: aiohttp.ClientSession
     api_url: str
+    logger: logging.Logger
 
     async def __call__(
         self: "LogRequestsEndpoint",
@@ -195,7 +204,7 @@ class LogRequestsEndpoint:
         async with self.session.get(
             f"{self.api_url}logrequests",
         ) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             data = await response.json()
             return [LogRequest(**r) for r in data["requests"]]
 
@@ -205,6 +214,7 @@ class CleanRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str
     request: LogRequest
+    logger: logging.Logger
 
     @retry(
         stop=stop_after_attempt(7),
@@ -216,7 +226,7 @@ class CleanRequestEndpoint:
         async with self.session.post(
             f"{self.api_url}logrequest/{self.request.request_id}/clean",
         ) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             logger.info("Cleaning request  %s" % (self.request.request_id))
             return await response.json()
 
@@ -226,6 +236,7 @@ class CancelRequestEndpoint:
     session: aiohttp.ClientSession
     api_url: str
     request: LogRequest
+    logger: logging.Logger
 
     @retry(
         stop=stop_after_attempt(7),
@@ -237,7 +248,7 @@ class CancelRequestEndpoint:
         async with self.session.post(
             f"{self.api_url}logrequest/{self.request.request_id}/cancel",
         ) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             logger.info("Canceling request  %s" % (self.request.request_id))
             return await response.json()
 
@@ -295,7 +306,7 @@ class DownloadRequestEndpoint:
             ),
         )
         async with self.session.get(url) as response:
-            await check_response(response)
+            await check_response(response, self.logger)
             response_text = await response.text()
         response_size: int = response.content_length or 0
         self.logger.info(
