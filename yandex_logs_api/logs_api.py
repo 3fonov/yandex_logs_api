@@ -1,8 +1,9 @@
 import asyncio
-from datetime import date, timedelta
-from typing import Any, AsyncGenerator
-from logging import Logger
 import logging
+from datetime import date, timedelta
+from logging import Logger
+from typing import Any, AsyncGenerator
+
 import aiohttp
 from tenacity import retry, retry_if_result, stop_after_attempt, wait_exponential
 
@@ -113,8 +114,8 @@ class LogsAPI:
     ) -> None:
         if date_start > date_end:
             raise RuntimeError("Start date cannot be after end date")
-        if date_end >= date.today() - timedelta(days=1):
-            raise RuntimeError("End date must by a day before yesterday")
+        if date_end >= date.today():
+            raise RuntimeError("End date must be a yesterday")
 
         self.request = LogRequest(
             date1=date_start.isoformat(),
