@@ -32,7 +32,7 @@ class LogsAPI:
     _session: aiohttp.ClientSession | None = None
 
     def __init__(
-        self: "LogsAPI", counter_id: int, token: str, logger: Logger | None
+        self: "LogsAPI", counter_id: int, token: str, logger: Logger | None = None
     ) -> None:
         self.counter_id = counter_id
         self.token = token
@@ -59,7 +59,10 @@ class LogsAPI:
     async def clean_up(self: "LogsAPI") -> None:
         requests = await LogRequestsEndpoint(self.session, self.api_url, self.logger)()
         for request in requests:
-            await self.clean_request(request)
+            try:
+                await self.clean_request(request)
+            except Exception as e:
+                self.logger.warning(f"Cannot clean request {request.request_id}\n{e}")
 
     async def clean_request(self, request: LogRequest):
         self.logger.info("Cleaning request %s", request.request_id)
