@@ -217,7 +217,7 @@ class CleanRequestEndpoint:
     logger: logging.Logger
 
     @retry(
-        stop=stop_after_attempt(7),
+        stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=16, max=180),
     )
     async def __call__(
